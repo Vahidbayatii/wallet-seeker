@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Wallet Seeker",
+    "slug": "wallet-seeker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0D0D1A",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wormgpt.walletseeker"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0D1A"
+      },
+      "package": "com.wormgpt.walletseeker"
+    }
+  }
+}
