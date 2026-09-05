@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 env:
@@ -36,12 +34,11 @@ jobs:
 
       - name: Prebuild Expo
         run: |
-          npx expo prebuild --platform android --no-install --clean 2>&1
+          npx expo prebuild --platform android --clean 2>&1
 
       - name: Build Android APK (Release)
         run: |
           cd android
-          export ANDROID_HOME=$ANDROID_SDK_ROOT
           ./gradlew assembleRelease --no-daemon 2>&1
 
       - name: Upload APK
