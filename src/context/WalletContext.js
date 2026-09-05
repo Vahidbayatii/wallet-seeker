@@ -1,12 +1,43 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+
 const WalletContext = createContext();
+
 export function WalletProvider({ children }) {
-  const [foundWallets, setFoundWallets] = useState([]);
   const [scanning, setScanning] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [stats, setStats] = useState({ totalScanned: 0, ethFound: 0, btcFound: 0, bnbFound: 0, totalValue: 0 });
-  const addFoundWallet = (wallet) => { setFoundWallets(prev => { const exists = prev.find(w => w.address === wallet.address); if (exists) return prev; return [wallet, ...prev]; }); };
-  const resetScan = () => { setFoundWallets([]); setScanning(false); setProgress({ current: 0, total: 0 }); setStats({ totalScanned: 0, ethFound: 0, btcFound: 0, bnbFound: 0, totalValue: 0 }); };
-  return (<WalletContext.Provider value={{ foundWallets, setFoundWallets, scanning, setScanning, progress, setProgress, stats, setStats, addFoundWallet, resetScan }}>{children}</WalletContext.Provider>);
+  const [results, setResults] = useState([]);
+  const [scannedCount, setScannedCount] = useState(0);
+  const [totalUSD, setTotalUSD] = useState(0);
+
+  const addResult = useCallback((wallet) => {
+    setResults(prev => {
+      const exists = prev.find(w => w.privateKey === wallet.privateKey);
+      if (exists) return prev;
+      const updated = [...prev, wallet];
+      setTotalUSD(t => t + wallet.totalUSD);
+      return updated;
+    });
+  }, []);
+
+  const incrementScanned = useCallback(() => {
+    setScannedCount(prev => prev + 1);
+  }, []);
+
+  const reset = useCallback(() => {
+    setResults([]);
+    setScannedCount(0);
+    setTotalUSD(0);
+    setScanning(false);
+  }, []);
+
+  return (
+    <WalletContext.Provider value={{ scanning, setScanning, results, addResult, scannedCount, incrementScanned, totalUSD, reset }}>
+      {children}
+    </WalletContext.Provider>
+  );
 }
-export function useWallet() { return useContext(WalletContext); }
+
+export function useWallet() {
+  const ctx = useContext(WalletContext);
+  if (!ctx) throw new Error('useWallet must be used within WalletProvider');
+  return ctx;
+}
