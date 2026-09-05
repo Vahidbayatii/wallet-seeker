@@ -1,35 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
-import { useWallet } from '../context/WalletContext';
-import { checkAllBalances } from '../engine/checker';
+import { WalletContext } from '../context/WalletContext';
+import { checkImportedWallet } from '../engine/checker';
+
 export default function ImportScreen({ navigation }) {
-  const { addFoundWallet, setStats, stats } = useWallet();
+  const { addResult } = useContext(WalletContext);
   const [keys, setKeys] = useState('');
   const [checking, setChecking] = useState(false);
+
   const handleImport = async () => {
     const lines = keys.trim().split('\n').filter(l => l.trim());
     if (lines.length === 0) { Alert.alert('Empty', 'Paste at least one private key'); return; }
     setChecking(true);
     let found = 0;
     for (let i = 0; i < lines.length; i++) {
-      const pk = lines[i].trim();
-      const result = await checkAllBalances(pk);
-      if (result) { addFoundWallet(result); found++; setStats(prev => ({ ...prev, ethFound: prev.ethFound + (result.network === 'ETH' ? 1 : 0), btcFound: prev.btcFound + (result.network === 'BTC' ? 1 : 0), bnbFound: prev.bnbFound + (result.network === 'BNB' ? 1 : 0), totalValue: prev.totalValue + result.value })); }
+      const pk = lines[i].trim().replace('0x', '');
+      const result = await checkImportedWallet(pk);
+      if (result.found) {
+        addResult(result);
+        found++;
+      }
     }
     setChecking(false);
-    Alert.alert('Done', `Checked ${lines.length} keys\nFound ${found} with balance`);
+    Alert.alert('Done', 'Checked ' + lines.length + ' keys\nFound ' + found + ' with balance');
     navigation.navigate('Results');
   };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>📥 Import Private Keys</Text>
-      <Text style={styles.subtitle}>Paste one key per line (hex or WIF format)</Text>
-      <TextInput style={styles.input} multiline placeholder={'0xabc123...\n0xdef456...\n5Jb3f... (WIF)'} placeholderTextColor="#444466" value={keys} onChangeText={setKeys} autoCapitalize="none" autoCorrect={false} />
-      <TouchableOpacity style={[styles.checkBtn, checking && styles.checkBtnDisabled]} onPress={handleImport} disabled={checking}><Text style={styles.checkBtnText}>{checking ? '⏳ Checking...' : '🔍 Check Balances'}</Text></TouchableOpacity>
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}><Text style={styles.backBtnText}>← Back</Text></TouchableOpacity>
+      <Text style={styles.subtitle}>Paste one key per line (hex format without 0x)</Text>
+      <TextInput
+        style={styles.input}
+        multiline
+        placeholder={'abc123...\ndef456...\n'}
+        placeholderTextColor="#444466"
+        value={keys}
+        onChangeText={setKeys}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      <TouchableOpacity style={[styles.checkBtn, checking && styles.checkBtnDisabled]} onPress={handleImport} disabled={checking}>
+        <Text style={styles.checkBtnText}>{checking ? '⏳ Checking...' : '🔍 Check Balances'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Text style={styles.backBtnText}>← Back</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0D0D1A' },
   content: { padding: 16 },
